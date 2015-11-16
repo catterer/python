@@ -36,7 +36,7 @@ class KustMod(object):
     def __repr__(self):
         key = None
         if self.key_printer:
-            key = self.key_printer(self.key)
+            key = self.key_printer(IStream(self.key))
         return '{}:{}'.format(key, self.mod_ver)
 
 class Rid(object):
@@ -62,6 +62,8 @@ class Rid(object):
         return int(self) == int(other)
     def __hash__(self):
         return int(self)
+    def bin(self):
+        return OStream().putU64(int(self)).data
 
 @total_ordering
 class MsgId(object):
@@ -87,7 +89,10 @@ class MsgId(object):
     def __int__(self):
         return IStream(OStream().putU32(self.c).putU32(self.t).data).getU64()
     def __repr__(self):
-        return '{0}={1}:{2}'.format(int(self), self.t, self.c)
+        if (int(self)):
+            return '{0}={1}:{2}'.format(int(self), self.t, self.c)
+        else:
+            return '0'
     def __hash__(self):
         return int(self)
 
@@ -137,9 +142,9 @@ class IStream(object):
     def getKustMod(self, key_printer):
         km = KustMod(key_printer)
         km.sid        = self.getU8()
-        km.key        = self.getLps()
+        km.key        = self.getLps().getAll()
         km.mod_ver    = self.getU64()
-        km.mod        = self.getLps()
+        km.mod        = self.getLps().getAll()
         km.resp       = self.getLps()
         km.req_id     = self.getLps().data
         return km
